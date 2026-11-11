@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rubric → Schoolbox CSV Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --purple:#4f2759;
+    --gold:#C59F40;
+    --lpurple:#e9deeb;
+    --ink:#241225;
+    --muted:#6b5a6f;
+    --line:#e6e1e8;
+    --line-strong:#d8cfdb;
+    --bg:#ffffff;
+    --bg-soft:#faf8fb;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Schibsted Grotesk',-apple-system,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px 80px;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    border-bottom:1px solid var(--line);
+    background:var(--bg);
+    position:sticky;top:0;z-index:30;
+  }
+  .top-inner{
+    max-width:1180px;margin:0 auto;padding:18px 28px;
+    display:flex;align-items:center;gap:16px;
+  }
+  .mark{
+    width:40px;height:40px;border-radius:9px;flex:0 0 auto;
+    background:var(--purple);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Schibsted Grotesk',-apple-system,sans-serif;font-weight:600;font-size:20px;
+  }
+  .mark span{color:var(--gold);}
+  .top h1{
+    font-family:'Schibsted Grotesk',-apple-system,sans-serif;font-weight:500;font-size:19px;
+    margin:0;letter-spacing:-0.01em;line-height:1.1;
+  }
+  .top .sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .top .spacer{flex:1;}
+  .top .badge{
+    font-size:11.5px;color:var(--muted);border:1px solid var(--line);
+    padding:5px 10px;border-radius:100px;
+  }
+
+  /* ---------- Hero / intro ---------- */
+  .intro{padding:38px 0 26px;}
+  .intro .kicker{
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;margin-bottom:10px;
+  }
+  .intro h2{
+    font-family:'Schibsted Grotesk',-apple-system,sans-serif;font-weight:500;font-size:34px;
+    line-height:1.1;letter-spacing:-0.02em;margin:0 0 10px;max-width:680px;
+  }
+  .intro p{color:var(--muted);max-width:620px;margin:0;font-size:15px;}
+
+  /* ---------- Steps layout ---------- */
+  .step{margin-top:30px;}
+  .step-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .step-num{
+    width:24px;height:24px;border-radius:50%;flex:0 0 auto;
+    border:1px solid var(--purple);color:var(--purple);
+    font-size:12px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step-num.done{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .step-title{font-family:'Schibsted Grotesk',-apple-system,sans-serif;font-size:18px;font-weight:500;}
+  .step.muted{opacity:.45;pointer-events:none;}
+
+  /* ---------- Dropzone ---------- */
+  .drop{
+    border:1.5px dashed var(--line-strong);border-radius:var(--radius);
+    background:var(--bg-soft);
+    padding:42px 24px;text-align:center;cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .drop:hover{border-color:var(--purple);background:#fbf9fc;}
+  .drop.drag{border-color:var(--purple);background:var(--lpurple);}
+  .drop .ic{
+    width:46px;height:46px;margin:0 auto 14px;border-radius:11px;
+    background:var(--lpurple);color:var(--purple);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .drop .ic svg{width:22px;height:22px;}
+  .drop strong{display:block;font-size:15.5px;font-weight:600;margin-bottom:4px;}
+  .drop .hint{font-size:13px;color:var(--muted);}
+  .drop .browse{color:var(--purple);text-decoration:underline;text-underline-offset:2px;}
+
+  .filechip{
+    display:flex;align-items:center;gap:12px;
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;background:var(--bg-soft);
+  }
+  .filechip .fic{
+    width:34px;height:34px;border-radius:8px;flex:0 0 auto;
+    background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;letter-spacing:.02em;
+  }
+  .filechip .fname{font-weight:600;font-size:14px;}
+  .filechip .fmeta{font-size:12px;color:var(--muted);}
+  .filechip .x{
+    margin-left:auto;border:1px solid var(--line);background:#fff;
+    border-radius:7px;padding:6px 10px;font-size:12.5px;cursor:pointer;color:var(--muted);
+    font-family:inherit;
+  }
+  .filechip .x:hover{border-color:var(--purple);color:var(--purple);}
+
+  /* ---------- Panels ---------- */
+  .panel{border:1px solid var(--line);border-radius:var(--radius);background:#fff;overflow:hidden;}
+  .panel + .panel{margin-top:18px;}
+  .panel-head{
+    padding:14px 18px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:10px;background:var(--bg-soft);
+  }
+  .panel-head h3{margin:0;font-size:14px;font-weight:600;}
+  .panel-head .ph-sub{font-size:12.5px;color:var(--muted);margin-left:2px;}
+  .panel-body{padding:18px;}
+
+  /* ---------- Form fields ---------- */
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  label.lbl{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  label.lbl .opt{color:var(--muted);font-weight:400;}
+  input[type=text]{
+    width:100%;border:1px solid var(--line-strong);border-radius:8px;
+    padding:9px 11px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;
+  }
+  input[type=text]:focus{outline:none;border-color:var(--purple);}
+  .help{font-size:12px;color:var(--muted);margin-top:5px;}
+
+  /* ---------- Band editor ---------- */
+  .bands{display:flex;flex-wrap:wrap;gap:10px;}
+  .band{
+    border:1px solid var(--line);border-radius:9px;padding:10px;
+    width:150px;background:var(--bg-soft);
+  }
+  .band .brow{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+  .band .swatch{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .band input{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 7px;font-size:12.5px;font-family:inherit;}
+  .band .mlbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;display:block;}
+  .band .mk{width:54px;}
+
+  .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+  .toggle .tk{
+    width:38px;height:22px;border-radius:100px;background:var(--line-strong);
+    position:relative;transition:background .15s;flex:0 0 auto;
+  }
+  .toggle .tk::after{
+    content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:left .15s;
+  }
+  .toggle.on .tk{background:var(--purple);}
+  .toggle.on .tk::after{left:18px;}
+  .toggle .tt{font-size:13px;}
+
+  /* ---------- Rubric editor table ---------- */
+  .rubric-scroll{overflow-x:auto;}
+  table.rub{border-collapse:collapse;width:100%;font-size:13px;min-width:760px;}
+  table.rub th,table.rub td{border:1px solid var(--line);vertical-align:top;padding:0;}
+  table.rub thead th{
+    background:var(--purple);color:#fff;font-weight:600;font-size:12px;
+    padding:9px 10px;text-align:left;position:relative;
+  }
+  table.rub thead th.first{background:#3c1d44;}
+  table.rub thead th .mk-tag{
+    display:inline-block;margin-left:6px;background:rgba(255,255,255,.16);
+    border-radius:4px;padding:0 6px;font-size:11px;
+  }
+  .gcell{background:var(--lpurple);}
+  .cellbox{
+    width:100%;border:0;background:transparent;resize:none;overflow:hidden;
+    font-family:inherit;font-size:13px;line-height:1.45;color:var(--ink);
+    padding:8px 9px;min-height:38px;display:block;
+  }
+  .cellbox:focus{outline:2px solid var(--gold);outline-offset:-2px;background:#fffdf6;}
+  .cellbox.group{font-weight:600;color:var(--purple);}
+  td.rownum{width:30px;text-align:center;color:var(--muted);font-size:11px;background:var(--bg-soft);padding:6px;}
+  td.del{width:34px;text-align:center;background:var(--bg-soft);}
+  .delbtn{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:6px;}
+  .delbtn:hover{color:#b3261e;}
+  .addrow{
+    margin-top:12px;border:1px dashed var(--line-strong);background:var(--bg-soft);
+    border-radius:8px;padding:9px 12px;font-size:13px;color:var(--purple);cursor:pointer;
+    font-family:inherit;font-weight:600;
+  }
+  .addrow:hover{border-color:var(--purple);}
+
+  /* ---------- CSV output ---------- */
+  .csvbox{
+    border:1px solid var(--line);border-radius:8px;background:#fbfafc;
+    font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;
+    font-size:12px;line-height:1.55;color:#3a2a3e;
+    padding:14px;white-space:pre;overflow-x:auto;max-height:300px;overflow-y:auto;
+  }
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center;}
+  .btn{
+    font-family:inherit;font-size:14px;font-weight:600;border-radius:9px;
+    padding:11px 20px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn-primary{background:var(--purple);color:#fff;}
+  .btn-primary:hover{background:#3f1f48;}
+  .btn-ghost{background:#fff;color:var(--purple);border-color:var(--line-strong);}
+  .btn-ghost:hover{border-color:var(--purple);}
+  .btn svg{width:16px;height:16px;}
+  .savednote{font-size:12.5px;color:var(--gold);font-weight:600;}
+
+  /* ---------- Warnings / status ---------- */
+  .warn{
+    border:1px solid #e9d8a6;background:#fdf8e9;border-radius:8px;
+    padding:12px 14px;font-size:13px;color:#6b551c;margin-bottom:16px;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .warn svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px;color:var(--gold);}
+  .err{
+    border:1px solid #f0c5c1;background:#fdf1f0;border-radius:8px;
+    padding:12px 14px;font-size:13px;color:#8a2b22;margin-top:14px;
+  }
+  .stat-row{display:flex;gap:24px;flex-wrap:wrap;margin-top:2px;}
+  .stat{display:flex;flex-direction:column;}
+  .stat .v{font-family:'Schibsted Grotesk',-apple-system,sans-serif;font-size:24px;font-weight:500;color:var(--purple);line-height:1;}
+  .stat .k{font-size:11.5px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.07em;}
+
+  .hidden{display:none!important;}
+  footer.foot{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+  .foot code{background:var(--bg-soft);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1>Year 10 Rubric Converter</h1>
+      <div class="sub">Convert a Word based rubric template into a WiSE-ready <code style="font-size:11px;">.CSV</code></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="badge">Year 10 · IB / VCE rubrics</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="intro">
+    <div class="kicker">Assessment Tools</div>
+    <h2>Year 10 Rubric Converter</h2>
+  </section>
+
+  <!-- STEP 1: UPLOAD -->
+  <section class="step" id="step1">
+    <div class="step-head">
+      <div class="step-num" id="s1num">1</div>
+      <div class="step-title">Upload your word document</div>
+    </div>
+
+    <div id="dropzone" class="drop">
+      <div class="ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/>
+        </svg>
+      </div>
+      <strong>Drag &amp; drop your <span style="color:var(--purple)">.docx</span> file here</strong>
+      <div class="hint">or <span class="browse">browse to choose a file</span> &nbsp;·&nbsp; Word documents only</div>
+    </div>
+    <input type="file" id="fileInput" accept=".docx" class="hidden">
+
+    <div id="filechipWrap" class="hidden" style="margin-top:14px;">
+      <div class="filechip">
+        <div class="fic">DOCX</div>
+        <div>
+          <div class="fname" id="fName">file.docx</div>
+          <div class="fmeta" id="fMeta">—</div>
+        </div>
+        <button class="x" id="clearFile">Remove</button>
+      </div>
+    </div>
+
+    <div id="parseErr" class="err hidden"></div>
+  </section>
+
+  <!-- STEP 2: REVIEW & EDIT -->
+  <section class="step muted" id="step2">
+    <div class="step-head">
+      <div class="step-num" id="s2num">2</div>
+      <div class="step-title">Review &amp; tidy the rubric</div>
+    </div>
+
+    <div id="warnArea"></div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Assessment &amp; performance bands</h3></div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="lbl" for="titleInput">Assessment title / criterion grouping <span class="opt">— fills Column A of the first row</span></label>
+          <input type="text" id="titleInput" placeholder="e.g. Unit 2 Outcome 1 — Analytical Response">
+          <div class="help">Schoolbox uses Column A as the criterion or grouping name. Leave any row's Column A blank to keep it grouped with the row above.</div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Performance bands &amp; marks <span class="opt">— edit labels or marks if needed</span></label>
+          <div class="bands" id="bandEditor"></div>
+        </div>
+
+        <div class="field" id="notShownField">
+          <div class="toggle" id="notShownToggle">
+            <div class="tk"></div>
+            <div class="tt"><strong>Include the “Not Shown” band</strong> &nbsp;<span style="color:var(--muted)">(detected in your document)</span></div>
+          </div>
+          <div class="help">The example Schoolbox export omits “Not Shown”. Toggle off if your school's import does not use a zero band.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Rubric content</h3>
+        <span class="ph-sub">Each row = one Key Skill / Indicator. Edit any cell directly.</span>
+      </div>
+      <div class="panel-body">
+        <div class="rubric-scroll">
+          <table class="rub" id="rubTable">
+            <thead id="rubHead"></thead>
+            <tbody id="rubBody"></tbody>
+          </table>
+        </div>
+        <button class="addrow" id="addRowBtn">+ Add a row</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: EXPORT -->
+  <section class="step muted" id="step3">
+    <div class="step-head">
+      <div class="step-num" id="s3num">3</div>
+      <div class="step-title">Export as CSV for WiSE</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>CSV preview</h3>
+        <span class="ph-sub">This is exactly what will download — formatted to the Schoolbox import rules.</span>
+      </div>
+      <div class="panel-body">
+        <div class="stat-row" style="margin-bottom:16px;">
+          <div class="stat"><div class="v" id="statCrit">0</div><div class="k">Key skills</div></div>
+          <div class="stat"><div class="v" id="statBands">0</div><div class="k">Bands</div></div>
+          <div class="stat"><div class="v" id="statRows">0</div><div class="k">CSV rows</div></div>
+        </div>
+        <div class="csvbox" id="csvPreview">—</div>
+        <div class="actions">
+          <button class="btn btn-primary" id="downloadBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            Download .CSV
+          </button>
+          <button class="btn btn-ghost" id="copyBtn">Copy to clipboard</button>
+          <span class="savednote hidden" id="savedNote">Downloaded ✓</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Formats output to the Schoolbox rules: Row 1 is <code>capabilityMarkType: raw</code>, <code>useMarkRange: On</code>
+    followed by band labels; descriptor rows carry the text and the row beneath each carries the marks.
+    Bold/italic in your document are converted to Markdown. All processing happens in your browser — nothing is uploaded.
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ====================== STATE ====================== */
+const state = {
+  fileName: "",
+  assessmentTitle: "",
+  bands: [],        // [{label, mark, include}]
+  hasNotShown: false,
+  criteria: [],     // [{group, skill, descriptors:[...]}]  descriptors aligns to bands order
+};
+
+/* ====================== DOCX PARSING ====================== */
+const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
+function tag(el, name){ return el.getElementsByTagName(name); }
+function directChildren(el, localName){
+  const out=[];
+  for(const c of el.childNodes){
+    if(c.nodeType===1 && (c.localName===localName || c.tagName==="w:"+localName)) out.push(c);
+  }
+  return out;
+}
+
+// A run -> one or more {text, bold, ital} segments (br/tab become text inside)
+function runSegment(r){
+  let txt="";
+  for(const node of r.childNodes){
+    if(node.nodeType!==1) continue;
+    const ln = node.localName;
+    if(ln==="t"){ txt += node.textContent; }
+    else if(ln==="br"){ txt += "\n"; }
+    else if(ln==="tab"){ txt += "\t"; }
+    else if(ln==="cr"){ txt += "\n"; }
+  }
+  if(txt==="") return null;
+  let bold=false, ital=false;
+  const rPr = r.getElementsByTagName("w:rPr")[0];
+  if(rPr){
+    for(const node of rPr.childNodes){
+      if(node.nodeType!==1) continue;
+      const v = node.getAttribute && node.getAttribute("w:val");
+      const off = (v==="false"||v==="0"||v==="none");
+      if(node.localName==="b" && !off) bold=true;
+      if(node.localName==="i" && !off) ital=true;
+    }
+  }
+  return {text:txt, bold, ital};
+}
+
+// Paragraph -> {segments:[...], prefix:"", listPrefix:""}
+function paraInfo(p){
+  const segs=[];
+  for(const r of p.getElementsByTagName("w:r")){
+    const s=runSegment(r);
+    if(s) segs.push(s);
+  }
+  let prefix="";
+  const pStyle = p.getElementsByTagName("w:pStyle")[0];
+  if(pStyle){
+    const v=(pStyle.getAttribute("w:val")||"").toLowerCase();
+    const m=v.match(/heading\s*([1-6])/);
+    if(m) prefix = "#".repeat(parseInt(m[1])) + " ";
+  }
+  const numPr = p.getElementsByTagName("w:numPr")[0];
+  if(numPr && !prefix) prefix = "- ";
+  return {segs, prefix};
+}
+
+// Plain rendering: ignore formatting entirely
+function renderPlain(info){
+  return info.segs.map(s=>s.text).join("");
+}
+// Markdown rendering: merge adjacent same-style segments, then wrap
+function renderMarkdown(info){
+  // merge adjacent runs sharing formatting to avoid "**a****b**"
+  const merged=[];
+  for(const s of info.segs){
+    const last=merged[merged.length-1];
+    if(last && last.bold===s.bold && last.ital===s.ital) last.text+=s.text;
+    else merged.push({text:s.text, bold:s.bold, ital:s.ital});
+  }
+  let out="";
+  for(const s of merged){
+    let t=s.text;
+    if(!s.bold && !s.ital){ out+=t; continue; }
+    // wrap non-whitespace core so spacing stays clean
+    const lead=t.match(/^\s*/)[0], trail=t.match(/\s*$/)[0];
+    let core=t.slice(lead.length, t.length-trail.length);
+    if(core){
+      if(s.bold && s.ital) core="***"+core+"***";
+      else if(s.bold) core="**"+core+"**";
+      else if(s.ital) core="*"+core+"*";
+    }
+    out+=lead+core+trail;
+  }
+  return out;
+}
+
+// Cell text (markdown=true applies bold/italic+heading/list syntax; false = plain)
+function cellText(tc, markdown){
+  const nestedParas = new Set();
+  for(const nt of tc.getElementsByTagName("w:tbl")){
+    for(const np of nt.getElementsByTagName("w:p")) nestedParas.add(np);
+  }
+  const lines=[];
+  for(const p of tc.getElementsByTagName("w:p")){
+    if(nestedParas.has(p)) continue;
+    const info=paraInfo(p);
+    let line = markdown ? renderMarkdown(info) : renderPlain(info);
+    if(markdown && info.prefix && line.trim()) line = info.prefix + line.trim();
+    lines.push(line);
+  }
+  let txt = lines.join("\n").replace(/\n{3,}/g,"\n\n");
+  return txt.replace(/^\s+|\s+$/g,"");
+}
+
+// Build a logical grid for a table, expanding gridSpan and carrying vMerge down
+function buildGrid(tbl){
+  const rows = directChildren(tbl,"tr");
+  const grid=[];
+  const carry={}; // colIndex -> text carried from a vMerge "restart"
+  for(const tr of rows){
+    const cells = directChildren(tr,"tc");
+    const rowArr=[];
+    let col=0;
+    for(const tc of cells){
+      const tcPr = tc.getElementsByTagName("w:tcPr")[0];
+      let span=1, vmerge=null;
+      if(tcPr){
+        const gs=tcPr.getElementsByTagName("w:gridSpan")[0];
+        if(gs) span=parseInt(gs.getAttribute("w:val")||"1")||1;
+        const vm=tcPr.getElementsByTagName("w:vMerge")[0];
+        if(vm){ vmerge = (vm.getAttribute("w:val")||"continue").toLowerCase(); }
+      }
+      let cell = { plain: cellText(tc,false), md: cellText(tc,true) };
+      if(vmerge==="continue"){ cell = carry[col]!==undefined ? carry[col] : {plain:"",md:""}; }
+      else if(vmerge==="restart"){ carry[col]=cell; }
+      for(let s=0;s<span;s++){
+        rowArr[col] = (s===0)?cell:{plain:"",md:""};
+        col++;
+      }
+    }
+    grid.push(rowArr);
+  }
+  // normalise width
+  const w = Math.max(0,...grid.map(r=>r.length));
+  grid.forEach(r=>{ while(r.length<w) r.push({plain:"",md:""}); });
+  return grid;
+}
+
+function cleanLabel(s){
+  return (s||"").replace(/\s*\(\s*-?\d+\s*\)\s*$/,"").replace(/\s+/g," ").trim();
+}
+function markFrom(s){
+  const m=(s||"").match(/\(\s*(-?\d+)\s*\)/);
+  return m?parseInt(m[1]):null;
+}
+
+// Identify the band-header row in a grid: row with >=2 cells containing "(n)" OR known band words
+const BAND_WORDS=["not shown","very low","low","medium","high","very high","not applicable","not demonstrated"];
+function looksLikeHeader(rowArr){
+  let hits=0, parenHits=0;
+  for(let i=1;i<rowArr.length;i++){
+    const t=((rowArr[i]&&rowArr[i].plain)||"").toLowerCase();
+    if(!t) continue;
+    if(/\(\s*-?\d+\s*\)/.test(t)) parenHits++;
+    if(BAND_WORDS.some(w=>t.includes(w))) hits++;
+  }
+  return parenHits>=2 || hits>=2;
+}
+
+// Parse one table into {bands, criteria}
+function parseTable(tbl){
+  const grid = buildGrid(tbl);
+  let hIdx=-1;
+  for(let i=0;i<grid.length;i++){ if(looksLikeHeader(grid[i])){ hIdx=i; break; } }
+  if(hIdx===-1) return null;
+
+  const header = grid[hIdx];
+  // band columns = columns from index 1 with a non-empty label (plain text)
+  const bandCols=[];
+  for(let c=1;c<header.length;c++){
+    const raw=(header[c]&&header[c].plain)||"";
+    const lbl = cleanLabel(raw);
+    if(lbl) bandCols.push({col:c, label:lbl, mark:markFrom(raw)});
+  }
+  if(bandCols.length<2) return null;
+
+  // boilerplate phrases found in the blank template — dropped only if the row has no descriptors
+  const BOILER=/^(insert (a )?description|insert key skill|faculties may include|e\.?g\.?\b|<|\[)/i;
+
+  const criteria=[];
+  for(let i=hIdx+1;i<grid.length;i++){
+    const row=grid[i];
+    const skill = ((row[0]&&row[0].plain)||"").trim();          // Col B = plain
+    const descs = bandCols.map(b=>((row[b.col]&&row[b.col].md)||"").trim()); // descriptors = markdown
+    const anyDesc = descs.some(d=>d!=="");
+    if(!skill && !anyDesc) continue;                 // empty row
+    if(!anyDesc && (skill==="" || BOILER.test(skill))) continue; // template placeholder row
+    criteria.push({group:"", skill, descriptors:descs});
+  }
+  return {bands:bandCols.map(b=>({label:b.label, mark:b.mark})), criteria};
+}
+
+function parseDocXml(xmlText){
+  const xml = new DOMParser().parseFromString(xmlText,"application/xml");
+  const perr = xml.getElementsByTagName("parsererror");
+  if(perr.length) throw new Error("Could not read the Word document's XML.");
+
+  // document title = first non-empty body paragraph that isn't an instruction
+  let title="";
+  const body = xml.getElementsByTagName("w:body")[0];
+  if(body){
+    for(const p of body.getElementsByTagName("w:p")){
+      // skip paragraphs inside any table
+      let inTbl=false, pp=p.parentNode;
+      while(pp){ if(pp.localName==="tbl"){ inTbl=true; break; } pp=pp.parentNode; }
+      if(inTbl) continue;
+      const t = renderPlain(paraInfo(p)).trim();
+      if(t && !/^total mark/i.test(t)){ title=t; break; }
+    }
+  }
+
+  const tables = Array.from(xml.getElementsByTagName("w:tbl"));
+  // only top-level tables (not nested in another table)
+  const topTables = tables.filter(t=>{
+    let p=t.parentNode;
+    while(p){ if(p.localName==="tbl") return false; p=p.parentNode; }
+    return true;
+  });
+
+  let bands=null;
+  const allCriteria=[];
+  let parsedAny=false;
+  topTables.forEach((tbl,ti)=>{
+    const res=parseTable(tbl);
+    if(!res) return;
+    parsedAny=true;
+    if(!bands) bands=res.bands;
+    // tag the first criterion of each subsequent table with a blank group (user can name)
+    res.criteria.forEach(c=>allCriteria.push(c));
+  });
+
+  if(!parsedAny || !bands) throw new Error("noTable");
+  return {title, bands, criteria:allCriteria};
+}
+
+/* ====================== INGEST ====================== */
+async function handleFile(file){
+  resetError();
+  if(!file) return;
+  if(!/\.docx$/i.test(file.name)){
+    showError("Please upload a Word <strong>.docx</strong> file. (Old <code>.doc</code> files aren't supported — open it in Word and Save As .docx.)");
+    return;
+  }
+  state.fileName = file.name;
+  document.getElementById("fName").textContent = file.name;
+  document.getElementById("fMeta").textContent = (file.size/1024).toFixed(1)+" KB · reading…";
+  document.getElementById("dropzone").classList.add("hidden");
+  document.getElementById("filechipWrap").classList.remove("hidden");
+
+  try{
+    const buf = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+    const docFile = zip.file("word/document.xml");
+    if(!docFile) throw new Error("That doesn't look like a valid Word document (no document.xml inside).");
+    const xmlText = await docFile.async("string");
+    const parsed = parseDocXml(xmlText);
+
+    state.assessmentTitle = parsed.title || "";
+    state.hasNotShown = parsed.bands.some(b=>/not shown/i.test(b.label));
+    state.bands = parsed.bands.map((b,i)=>({
+      label:b.label,
+      mark: (b.mark!==null && b.mark!==undefined) ? b.mark : i,
+      include: true
+    }));
+    state.criteria = parsed.criteria.map(c=>({
+      group:c.group||"",
+      skill:c.skill||"",
+      descriptors: state.bands.map((b,i)=> c.descriptors[i]!==undefined ? c.descriptors[i] : "")
+    }));
+
+    document.getElementById("fMeta").textContent =
+      (file.size/1024).toFixed(1)+" KB · "+state.criteria.length+" key skills · "+state.bands.length+" bands";
+
+    activateEditing();
+    renderAll();
+  }catch(e){
+    if(e.message==="noTable"){
+      showError("I couldn't find a rubric table with performance bands in that document.<br>Make sure you're uploading the completed <strong>Year 10 Rubric Template</strong>, where the band row reads like <em>Not Shown (0) · Very Low (1) · …</em>");
+    }else{
+      showError("Something went wrong reading the file: "+ (e.message||e));
+    }
+    document.getElementById("fMeta").textContent = (file.size/1024).toFixed(1)+" KB";
+  }
+}
+
+function showError(html){
+  const el=document.getElementById("parseErr");
+  el.innerHTML=html; el.classList.remove("hidden");
+}
+function resetError(){ document.getElementById("parseErr").classList.add("hidden"); }
+
+function activateEditing(){
+  document.getElementById("s1num").classList.add("done");
+  document.getElementById("step2").classList.remove("muted");
+  document.getElementById("step3").classList.remove("muted");
+  document.getElementById("s2num").classList.add("done");
+  document.getElementById("s3num").classList.add("done");
+}
+
+/* ====================== RENDER ====================== */
+const BAND_COLORS=["#9aa0a6","#b48ec0","#8d63a0","#C59F40","#7a4f87","#4f2759","#3c1d44"];
+
+function activeBands(){ return state.bands.filter(b=>b.include); }
+
+function renderBandEditor(){
+  const wrap=document.getElementById("bandEditor");
+  wrap.innerHTML="";
+  state.bands.forEach((b,i)=>{
+    const isNotShown=/not shown/i.test(b.label);
+    const div=document.createElement("div");
+    div.className="band";
+    if(!b.include) div.style.opacity=".45";
+    div.innerHTML=`
+      <div class="brow">
+        <span class="swatch" style="background:${BAND_COLORS[i%BAND_COLORS.length]}"></span>
+        <input type="text" data-bi="${i}" data-k="label" value="${escAttr(b.label)}">
+      </div>
+      <span class="mlbl">Mark</span>
+      <input type="text" class="mk" data-bi="${i}" data-k="mark" value="${escAttr(String(b.mark))}">
+    `;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const i=+inp.dataset.bi, k=inp.dataset.k;
+      if(k==="mark"){ const v=parseInt(inp.value); state.bands[i].mark = isNaN(v)?inp.value:v; }
+      else state.bands[i].label=inp.value;
+      renderRubricHead(); renderCSV();
+    });
+  });
+
+  // Not Shown toggle
+  const tog=document.getElementById("notShownToggle");
+  const field=document.getElementById("notShownField");
+  if(state.hasNotShown){
+    field.classList.remove("hidden");
+    const nsIdx=state.bands.findIndex(b=>/not shown/i.test(b.label));
+    const on = nsIdx>=0 && state.bands[nsIdx].include;
+    tog.classList.toggle("on", on);
+  }else{
+    field.classList.add("hidden");
+  }
+}
+
+function renderRubricHead(){
+  const head=document.getElementById("rubHead");
+  const bands=activeBands();
+  let html="<tr><th class='first' style='width:30px'></th><th class='first' style='min-width:210px'>Key Skills &amp; Indicators<br><span style='font-weight:400;opacity:.75'>Column&nbsp;B</span></th>";
+  bands.forEach(b=>{
+    html+=`<th style="min-width:150px">${escHtml(b.label)}<span class="mk-tag">${escHtml(String(b.mark))}</span></th>`;
+  });
+  html+="<th class='first' style='width:34px'></th></tr>";
+  head.innerHTML=html;
+}
+
+function renderRubricBody(){
+  const body=document.getElementById("rubBody");
+  const bands=activeBands();
+  body.innerHTML="";
+  state.criteria.forEach((c,ri)=>{
+    const tr=document.createElement("tr");
+    let cells=`<td class="rownum">${ri+1}</td>`;
+    // Key skill (Col B)
+    cells+=`<td><textarea class="cellbox" data-ri="${ri}" data-f="skill" rows="2" placeholder="Key skill / indicator…">${escHtml(c.skill)}</textarea></td>`;
+    // descriptors
+    bands.forEach((b)=>{
+      const realIdx = state.bands.indexOf(b);
+      cells+=`<td><textarea class="cellbox" data-ri="${ri}" data-d="${realIdx}" rows="2" placeholder="…">${escHtml(c.descriptors[realIdx]||"")}</textarea></td>`;
+    });
+    cells+=`<td class="del"><button class="delbtn" data-del="${ri}" title="Delete row">×</button></td>`;
+    tr.innerHTML=cells;
+    body.appendChild(tr);
+  });
+
+  body.querySelectorAll("textarea").forEach(t=>{
+    autosize(t);
+    t.addEventListener("input",()=>{
+      autosize(t);
+      const ri=+t.dataset.ri;
+      if(t.dataset.f==="skill") state.criteria[ri].skill=t.value;
+      else if(t.dataset.d!==undefined) state.criteria[ri].descriptors[+t.dataset.d]=t.value;
+      renderCSV();
+    });
+  });
+  // second pass: after layout settles (column widths finalised), size to full content
+  requestAnimationFrame(()=>body.querySelectorAll("textarea").forEach(autosize));
+  body.querySelectorAll(".delbtn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      state.criteria.splice(+btn.dataset.del,1);
+      renderRubricBody(); renderCSV();
+    });
+  });
+}
+
+// Grow a textarea to fit its content so the full descriptor is visible without scrolling
+function autosize(el){
+  el.style.height="auto";
+  el.style.height=(el.scrollHeight)+"px";
+}
+
+/* ====================== CSV ====================== */
+function csvEscape(v){
+  v = (v===null||v===undefined) ? "" : String(v);
+  if(/[",\r\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function buildCSVRows(){
+  const bands=activeBands();
+  const rows=[];
+  // header
+  rows.push(["capabilityMarkType: raw","useMarkRange: On", ...bands.map(b=>b.label)]);
+  state.criteria.forEach((c,idx)=>{
+    let group=c.group||"";
+    if(idx===0 && !group) group = state.assessmentTitle || "";
+    // descriptor row
+    rows.push([group, c.skill, ...bands.map(b=>{
+      const realIdx=state.bands.indexOf(b);
+      return c.descriptors[realIdx]||"";
+    })]);
+    // marks row
+    rows.push(["","", ...bands.map(b=>b.mark)]);
+  });
+  return rows;
+}
+function csvText(){
+  return buildCSVRows().map(r=>r.map(csvEscape).join(",")).join("\r\n");
+}
+
+function renderCSV(){
+  const rows=buildCSVRows();
+  const txt = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  document.getElementById("csvPreview").textContent = txt || "—";
+  document.getElementById("statCrit").textContent = state.criteria.length;
+  document.getElementById("statBands").textContent = activeBands().length;
+  document.getElementById("statRows").textContent = rows.length;
+  renderWarnings();
+}
+
+function renderWarnings(){
+  const area=document.getElementById("warnArea");
+  const msgs=[];
+  const bands=activeBands();
+  const noSkill=state.criteria.filter(c=>!c.skill.trim()).length;
+  if(noSkill) msgs.push(`${noSkill} row${noSkill>1?"s have":" has"} an empty Key Skill (Column B). Schoolbox expects a name for each indicator.`);
+  const emptyDesc=state.criteria.filter(c=>bands.some(b=>!(c.descriptors[state.bands.indexOf(b)]||"").trim())).length;
+  if(emptyDesc) msgs.push(`${emptyDesc} row${emptyDesc>1?"s have":" has"} one or more empty band descriptors.`);
+  const marks=bands.map(b=>b.mark);
+  if(new Set(marks).size!==marks.length) msgs.push("Two bands share the same mark value — check the marks above.");
+
+  if(!msgs.length){ area.innerHTML=""; return; }
+  area.innerHTML = msgs.map(m=>`<div class="warn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+    <div>${m}</div></div>`).join("");
+}
+
+function renderAll(){
+  document.getElementById("titleInput").value = state.assessmentTitle;
+  renderBandEditor();
+  renderRubricHead();
+  renderRubricBody();
+  renderCSV();
+}
+
+/* ====================== HELPERS ====================== */
+function escHtml(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escAttr(s){return escHtml(s).replace(/"/g,"&quot;");}
+
+function safeFileName(){
+  let base=(state.assessmentTitle||state.fileName||"rubric").replace(/\.docx$/i,"");
+  base=base.replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"_");
+  if(!base) base="rubric";
+  return base+"_schoolbox.csv";
+}
+function download(){
+  const txt=csvText();
+  const blob=new Blob([txt],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=safeFileName(); document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  const n=document.getElementById("savedNote"); n.classList.remove("hidden");
+  setTimeout(()=>n.classList.add("hidden"),2500);
+}
+
+/* ====================== EVENTS ====================== */
+const dz=document.getElementById("dropzone");
+const fi=document.getElementById("fileInput");
+dz.addEventListener("click",()=>fi.click());
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
+dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
+dz.addEventListener("drop",e=>{
+  e.preventDefault();dz.classList.remove("drag");
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener("change",e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+document.getElementById("clearFile").addEventListener("click",()=>{
+  state.criteria=[]; state.bands=[]; state.assessmentTitle=""; state.fileName="";
+  fi.value="";
+  document.getElementById("filechipWrap").classList.add("hidden");
+  document.getElementById("dropzone").classList.remove("hidden");
+  document.getElementById("step2").classList.add("muted");
+  document.getElementById("step3").classList.add("muted");
+  document.getElementById("s1num").classList.remove("done");
+  document.getElementById("s2num").classList.remove("done");
+  document.getElementById("s3num").classList.remove("done");
+  document.getElementById("rubBody").innerHTML="";
+  document.getElementById("rubHead").innerHTML="";
+  document.getElementById("csvPreview").textContent="—";
+  document.getElementById("bandEditor").innerHTML="";
+  document.getElementById("warnArea").innerHTML="";
+  resetError();
+});
+
+document.getElementById("titleInput").addEventListener("input",e=>{
+  state.assessmentTitle=e.target.value; renderCSV();
+});
+document.getElementById("notShownToggle").addEventListener("click",()=>{
+  const nsIdx=state.bands.findIndex(b=>/not shown/i.test(b.label));
+  if(nsIdx<0) return;
+  state.bands[nsIdx].include=!state.bands[nsIdx].include;
+  renderBandEditor(); renderRubricHead(); renderRubricBody(); renderCSV();
+});
+document.getElementById("addRowBtn").addEventListener("click",()=>{
+  state.criteria.push({group:"",skill:"",descriptors:state.bands.map(()=> "")});
+  renderRubricBody(); renderCSV();
+});
+document.getElementById("downloadBtn").addEventListener("click",download);
+document.getElementById("copyBtn").addEventListener("click",()=>{
+  navigator.clipboard.writeText(csvText()).then(()=>{
+    const b=document.getElementById("copyBtn"); const old=b.textContent;
+    b.textContent="Copied ✓"; setTimeout(()=>b.textContent=old,1800);
+  });
+});
+let resizeTimer;
+window.addEventListener("resize",()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{
+    document.querySelectorAll("#rubBody textarea").forEach(autosize);
+  },120);
+});
+</script>
+</body>
+</html>
